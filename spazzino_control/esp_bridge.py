@@ -13,22 +13,22 @@ class ESPBridge(Node):
     def __init__(self):
         super().__init__('esp_bridge')
 
-        # Parametri di rete
+        # Parameters 
         self.declare_parameter('esp_ip', '192.168.4.1')
         self.declare_parameter('esp_port', 8888)
 
         esp_ip = self.get_parameter('esp_ip').value
         esp_port = self.get_parameter('esp_port').value
 
-        # Connessione TCP all’ESP
+        # TCP connection to ESP
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((esp_ip, esp_port))
         self.get_logger().info(f"Connesso all’ESP su {esp_ip}:{esp_port}")
 
-        # Publisher Odometry
+        # Odometry publisher
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
 
-        # Subscriber per cmd_vel
+        # cmd_vel subscriber
         self.cmd_sub = self.create_subscription(
             Twist,
             'cmd_vel',
@@ -36,12 +36,12 @@ class ESPBridge(Node):
             10
         )
 
-        # Thread per leggere dati dall’ESP
+        # ESP reading thread
         self.running = True
         self.reader_thread = threading.Thread(target=self.read_from_esp, daemon=True)
         self.reader_thread.start()
 
-        # Stato odometria
+        # Odometry parameters
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
@@ -51,7 +51,7 @@ class ESPBridge(Node):
         try:
             self.sock.send(cmd.encode())
         except Exception as e:
-            self.get_logger().error(f"Errore invio a ESP: {e}")
+            self.get_logger().error(f"Sending error: {e}")
 
     def read_from_esp(self):
         buffer = ""
@@ -65,7 +65,7 @@ class ESPBridge(Node):
                     line, buffer = buffer.split('\n', 1)
                     self.process_encoder_data(line.strip())
             except Exception as e:
-                self.get_logger().error(f"Errore lettura da ESP: {e}")
+                self.get_logger().error(f"Reading error: {e}")
                 self.running = False
 
     def process_encoder_data(self, line: str):
@@ -74,11 +74,11 @@ class ESPBridge(Node):
             dl = int(dl_str)
             dr = int(dr_str)
 
-            # Parametri da calibrare
+            # Parameters (to calibrate)
             TICKS_PER_M = 1000.0
             WHEEL_BASE = 0.20
 
-            # Spostamenti
+            # Tracking movements
             d_left = dl / TICKS_PER_M
             d_right = dr / TICKS_PER_M
             d_center = (d_left + d_right) / 2.0
@@ -88,7 +88,7 @@ class ESPBridge(Node):
             self.y += d_center * math.sin(self.theta + d_theta/2)
             self.theta += d_theta
 
-            # Pubblica Odometry
+            # Publishing odometry 
             odom = Odometry()
             odom.header.stamp = self.get_clock().now().to_msg()
             odom.header.frame_id = "odom"
@@ -106,7 +106,7 @@ class ESPBridge(Node):
             self.odom_pub.publish(odom)
 
         except Exception as e:
-            self.get_logger().warn(f"Dato encoder non valido: {line} ({e})")
+            self.get_logger().warn(f"Not valid encoder data: {line} ({e})")
 
     def destroy_node(self):
         self.running = False

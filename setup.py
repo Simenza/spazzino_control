@@ -16,9 +16,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'esp_bridge = spazzino_control.esp_bridge:main',
-            'esp_cmdvel_node = spazzino_control.esp_cmdvel_node:main',
-            'esp_odom_node = spazzino_control.esp_odom_node:main'
+            'arduino_bridge = spazzino_control.arduino_bridge:main'
         ],
     },
 )

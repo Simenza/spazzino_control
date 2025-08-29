@@ -12,38 +12,38 @@ class ArduinoBridge(Node):
     def __init__(self):
         super().__init__('arduino_bridge')
 
-        # Apri seriale verso Arduino
+        # Opens serial to Arduino
         self.ser = serial.Serial('/dev/arduino', 115200, timeout=0.1)
 
-        # Publisher odometria
+        # Odometry publisher
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
 
-        # Broadcaster TF
+        # Tf broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
-        # Subscriber a cmd_vel
+        # cmd_vel subscriber
         self.cmd_sub = self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
 
-        # Timer per leggere la seriale
+        # serial reading timer
         self.timer = self.create_timer(0.02, self.read_serial)  # 50 Hz
 
-        # Stato interno odometria
+        # Odometry variables
         self.x = 0.0
         self.y = 0.0
         self.th = 0.0
 
     def cmd_vel_callback(self, msg: Twist):
         """
-        Invia i comandi di velocità all’Arduino.
-        Protocollo esempio: "V {v_lin} {v_ang}\n"
+        Sends vel commands to Arduino.
+        Protocol form: "V {v_lin} {v_ang}\n"
         """
         command = f"V {msg.linear.x:.3f} {msg.angular.z:.3f}\n"
         self.ser.write(command.encode())
 
     def read_serial(self):
         """
-        Legge odometria da Arduino.
-        Protocollo esempio: "O x y th\n"
+        Reads odometry from Arduino.
+        Protocol form: "O x y th\n"
         """
         line = self.ser.readline().decode().strip()
         if not line:
@@ -57,7 +57,7 @@ class ArduinoBridge(Node):
                 self.th = float(th)
                 self.publish_odom()
         except Exception as e:
-            self.get_logger().warn(f"Errore parsing seriale: {e}")
+            self.get_logger().warn(f"Serial parsing error: {e}")
 
     def publish_odom(self):
         # Odometry msg
