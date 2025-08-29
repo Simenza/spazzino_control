@@ -7,7 +7,7 @@ import math
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
-from transforms3d.euler import euler2quat  # <-- sostituito
+from transforms3d.euler import euler2quat 
 
 class ESPBridge(Node):
     def __init__(self):
