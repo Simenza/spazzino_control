@@ -13,7 +13,7 @@ class ArduinoBridge(Node):
         super().__init__('arduino_bridge')
 
         # Opens serial to Arduino
-        self.ser = serial.Serial('/dev/arduino', 115200, timeout=0.1)
+        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.1)
 
         # Odometry publisher
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
@@ -39,6 +39,7 @@ class ArduinoBridge(Node):
         """
         command = f"V {msg.linear.x:.3f} {msg.angular.z:.3f}\n"
         self.ser.write(command.encode())
+        self.get_logger(f"Comando inviato: V {msg.linear.x:.3f} {msg.angular.z:.3f}\n")
 
     def read_serial(self):
         """
