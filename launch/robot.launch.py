@@ -21,6 +21,11 @@ def generate_launch_description():
         'robot.xacro'
     )
 
+    sllidar_launch_file = os.path.join(
+        get_package_share_directory('sllidar_ros2'),
+        'launch',
+        'sllidar_c1_launch.py'
+    )
     
 
     '''slam_params_path = os.path.join(
@@ -65,13 +70,9 @@ def generate_launch_description():
         output='screen'
     )
 
-    # lidar_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join('sllidar_ros2'),
-    #         'launch',
-    #         'sllidar_c1_launch.py'
-    #     )
-    # )
+    lidar_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(sllidar_launch_file)
+    )
 
     arduino_bridge_node = Node(
             package=package_name,
@@ -79,6 +80,12 @@ def generate_launch_description():
             name="arduino_bridge",
             output="screen"
     )
+
+    rviz_node = Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            output='screen')
 
     # esp_odom_node = Node(
     #     package='spazzino_control',
@@ -140,9 +147,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         robot_state_publisher_node,
-        #lidar_launch,
+        lidar_launch,
         arduino_bridge_node,
-        static_tf_pub_node
+        static_tf_pub_node,
+        rviz_node
         #esp_cmdvel_node,
         #esp_odom_node
         #slam_toolbox_launch,
