@@ -39,7 +39,7 @@ class ArduinoBridge(Node):
         """
         command = f"V {msg.linear.x:.3f} {msg.angular.z:.3f}\n"
         self.ser.write(command.encode())
-        self.get_logger(f"Comando inviato: V {msg.linear.x:.3f} {msg.angular.z:.3f}\n")
+        self.get_logger().info(f"Comando inviato: V {msg.linear.x:.3f} {msg.angular.z:.3f}\n")
 
     def read_serial(self):
         """
