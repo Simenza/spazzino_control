@@ -73,7 +73,7 @@ def generate_launch_description():
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(sllidar_launch_file),
         launch_arguments={
-            'port': '/dev/lidar',    
+            'port': '/dev/ttyUSB0',    
             'frame_id': 'spazz.ino/body_link/laser_frame'  
         }.items()
     )
