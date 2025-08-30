@@ -81,11 +81,11 @@ def generate_launch_description():
             output="screen"
     )
 
-    rviz_node = Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            output='screen')
+    # rviz_node = Node(
+    #         package='rviz2',
+    #         executable='rviz2',
+    #         name='rviz2',
+    #         output='screen')
 
     # esp_odom_node = Node(
     #     package='spazzino_control',
@@ -149,8 +149,8 @@ def generate_launch_description():
         robot_state_publisher_node,
         lidar_launch,
         arduino_bridge_node,
-        static_tf_pub_node,
-        rviz_node
+        static_tf_pub_node
+        #rviz_node
         #esp_cmdvel_node,
         #esp_odom_node
         #slam_toolbox_launch,
