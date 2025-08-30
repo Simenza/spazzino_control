@@ -71,7 +71,11 @@ def generate_launch_description():
     )
 
     lidar_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(sllidar_launch_file)
+        PythonLaunchDescriptionSource(sllidar_launch_file),
+        launch_arguments={
+            'port': '/dev/lidar',    
+            'frame_id': 'spazz.ino/body_link/laser_frame'  
+        }.items()
     )
 
     arduino_bridge_node = Node(
