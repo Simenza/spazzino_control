@@ -13,7 +13,7 @@ class ArduinoBridge(Node):
         super().__init__('arduino_bridge')
 
         # Opens serial to Arduino
-        self.ser = serial.Serial('/dev/arudino', 115200, timeout=0.1)
+        self.ser = serial.Serial('/dev/arduino', 115200, timeout=0.1)
 
         # Odometry publisher
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
