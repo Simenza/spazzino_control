@@ -65,7 +65,7 @@ class ArduinoBridge(Node):
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
         odom.header.frame_id = "odom"
-        odom.child_frame_id = "base_link"
+        odom.child_frame_id = "body_link"
 
         odom.pose.pose.position.x = self.x
         odom.pose.pose.position.y = self.y
@@ -82,7 +82,7 @@ class ArduinoBridge(Node):
         t = TransformStamped()
         t.header.stamp = odom.header.stamp
         t.header.frame_id = "odom"
-        t.child_frame_id = "base_link"
+        t.child_frame_id = "body_link"
         t.transform.translation.x = self.x
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
