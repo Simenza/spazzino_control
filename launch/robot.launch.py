@@ -28,13 +28,13 @@ def generate_launch_description():
     )
     
 
-    '''slam_params_path = os.path.join(
+    slam_params_path = os.path.join(
         get_package_share_directory(package_name),
         'config',
         'mapper_params_online_async.yaml'
-    )'''
+    )
 
-    '''twist_mux_params_path = os.path.join(
+    twist_mux_params_path = os.path.join(
         get_package_share_directory(package_name),
         'config',
         'twist_mux.yaml'
@@ -44,7 +44,7 @@ def generate_launch_description():
         get_package_share_directory(package_name),
         'config',
         'nav2_params.yaml'
-    )'''
+    )
 
 
     # Process the Xacro file to generate the URDF representation of the robot
@@ -106,7 +106,7 @@ def generate_launch_description():
     # )
 
 
-    """slam_toolbox_launch = IncludeLaunchDescription(
+    slam_toolbox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('slam_toolbox'),
@@ -118,17 +118,16 @@ def generate_launch_description():
             'slam_params_file': slam_params_path,
             'use_sim_time': 'false'
         }.items()
-    )"""
+    )
 
 
-    '''twist_mux_process = ExecuteProcess(
-        cmd=[
-            'ros2', 'run', 'twist_mux', 'twist_mux',
-            '--ros-args',
-            '--params-file', twist_mux_params_path,
-            '-r', 'cmd_vel_out:=diff_cont/cmd_vel_unstamped'
-        ],
-        output='screen'
+    twist_mux_process = Node(
+        package="twist_mux",
+        executable="twist_mux",
+        name="twist_mux",
+        output="screen",
+        parameters=[twist_mux_params_path],
+        remappings=[('/cmd_vel_out', '/cmd_vel')]
     )
 
     nav2_launch = IncludeLaunchDescription(
@@ -136,14 +135,14 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory('nav2_bringup'),
                 'launch',
-                'bringup_launch.py'
+                'navigation_launch.py'
             )
         ),
         launch_arguments={
             'params_file': nav2_params_path,
             'use_sim_time': 'false'
         }.items()
-    )'''
+    )
 
 
 
@@ -153,11 +152,11 @@ def generate_launch_description():
         robot_state_publisher_node,
         lidar_launch,
         arduino_bridge_node,
-        static_tf_pub_node
+        static_tf_pub_node,
+        slam_toolbox_launch,
+        nav2_launch,
+        twist_mux_process
         #rviz_node
         #esp_cmdvel_node,
         #esp_odom_node
-        #slam_toolbox_launch,
-        #twist_mux_process,
-        #nav2_launch,
     ])
