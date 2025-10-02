@@ -1,22 +1,19 @@
+// ESP32-WROOM-32D version: dual hardware I2C for AS5600 encoders
 #include <Arduino.h>
 #include <Wire.h>
-#include <SoftwareWire.h>
 #include <AccelStepper.h>
 
-// ================= Bus I2C =================
-// Bus hardware su A4/A5
-#define SDA_HW A4
-#define SCL_HW A5
-// Bus software su D2/D3
-#define SDA_SW 8
-#define SCL_SW 10
-SoftwareWire Wire2(SDA_SW, SCL_SW);
+// ================= ESP32 I2C =================
+#define SDA_HW0 21 // I2C0 SDA
+#define SCL_HW0 22 // I2C0 SCL
+#define SDA_HW1 25 // I2C1 SDA (choose available pins)
+#define SCL_HW1 26 // I2C1 SCL
+
+TwoWire I2C0 = TwoWire(0);
+TwoWire I2C1 = TwoWire(1);
 
 // ================= AS5600 =================
-const byte AS5600_LEFT  = 0x36;  // bus HW
-const byte AS5600_RIGHT = 0x36;  // bus SW (stesso indirizzo, altro bus)
-
-// Registro ANGLE
+const byte AS5600_ADDR = 0x36; // Both encoders use same address
 const uint8_t ANGLE_MSB = 0x0E;
 const uint8_t ANGLE_LSB = 0x0F;
 
@@ -28,14 +25,12 @@ const int microstepping  = 1;
 const float gear_ratio   = 1.0;
 
 // ================= Pin driver =================
-// RIGHT track
-#define EN_R 2
-#define DIR_R 5
-#define STEP_R 6
-// LEFT track
-#define EN_L 4
-#define DIR_L 3
-#define STEP_L 9
+#define EN_R 12
+#define DIR_R 13
+#define STEP_R 14
+#define EN_L 15
+#define DIR_L 16
+#define STEP_L 17
 
 // ================= Stepper =================
 AccelStepper stepperL(AccelStepper::DRIVER, STEP_L, DIR_L);
@@ -54,7 +49,6 @@ float readAngleI2C(T &bus, byte addr) {
   bus.beginTransmission(addr);
   bus.write(ANGLE_MSB);
   if (bus.endTransmission(false) != 0) return NAN;
-
   if (bus.requestFrom(addr, (uint8_t)2) == 2) {
     uint16_t raw = (bus.read() << 8) | bus.read();
     raw &= 0x0FFF;
@@ -81,10 +75,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
 
-  Wire.begin();
-  Wire.setClock(400000L);
-  Wire2.begin();
-  Wire2.setClock(400000L);
+  I2C0.begin(SDA_HW0, SCL_HW0, 400000L);
+  I2C1.begin(SDA_HW1, SCL_HW1, 400000L);
 
   pinMode(EN_L, OUTPUT);
   pinMode(EN_R, OUTPUT);
@@ -95,8 +87,8 @@ void setup() {
   stepperR.setMaxSpeed(500);
   stepperL.setPinsInverted(true, false, false);
 
-  last_angle_left  = readAngleI2C(Wire, AS5600_LEFT);
-  last_angle_right = readAngleI2C(Wire2, AS5600_RIGHT);
+  last_angle_left  = readAngleI2C(I2C0, AS5600_ADDR);
+  last_angle_right = readAngleI2C(I2C1, AS5600_ADDR);
 
   Serial.println("Robot pronto a ricevere comandi e trasmettere odometria...");
 }
@@ -110,21 +102,16 @@ void loop() {
     if (line.startsWith("V")) {
       line.remove(0, 1);
       line.trim();
-
       int spaceIndex = line.indexOf(' ');
       if (spaceIndex > 0) {
         v_lin = line.substring(0, spaceIndex).toFloat();
         v_ang = line.substring(spaceIndex + 1).toFloat();
-
         float v_r = v_lin + (v_ang * track_base / 2.0);
         float v_l = v_lin - (v_ang * track_base / 2.0);
-
         long steps_r = velToSteps(v_r);
         long steps_l = velToSteps(v_l);
-
         stepperR.setSpeed(steps_r);
         stepperL.setSpeed(steps_l);
-
         Serial.print("CMD: V_lin=");
         Serial.print(v_lin, 3);
         Serial.print(" V_ang=");
@@ -132,44 +119,33 @@ void loop() {
       }
     }
   }
-
   // --- Movimento motori ---
   stepperL.runSpeed();
   stepperR.runSpeed();
-
   // --- Aggiorna odometria ogni 100ms ---
   static unsigned long lastOdo = 0;
   if (millis() - lastOdo >= 100) {
     lastOdo = millis();
-
-    float angle_right  = readAngleI2C(Wire, AS5600_LEFT);
-    float angle_left = readAngleI2C(Wire2, AS5600_RIGHT);
-
+    float angle_left  = readAngleI2C(I2C0, AS5600_ADDR);
+    float angle_right = readAngleI2C(I2C1, AS5600_ADDR);
     if (!isnan(angle_left) && !isnan(angle_right)) {
       float dtheta_left  = deltaAngle(last_angle_left, angle_left);
       float dtheta_right = deltaAngle(last_angle_right, angle_right);
-
       last_angle_left  = angle_left;
       last_angle_right = angle_right;
-
       float dL = (dtheta_left  / 360.0) * (2.0 * PI * track_radius);
       float dR = (dtheta_right / 360.0) * (2.0 * PI * track_radius);
-
       static float pos_left_rad  = 0.0;
       static float pos_right_rad = 0.0;
       pos_left_rad  += dtheta_left  * PI / 360.0;
       pos_right_rad += dtheta_right * PI / 360.0;
-
       float dS = (dR + dL) / 2.0;
       float dTh = (dR - dL) / track_base;
-
       x  += dS * cos(th + dTh / 2.0);
       y  += dS * sin(th + dTh / 2.0);
       th += dTh;
-
       if (th > PI) th -= 2.0 * PI;
       if (th < -PI) th += 2.0 * PI;
-
       // --- Stampa odometria ---
       Serial.print("O ");
       Serial.print(x, 3);
@@ -177,7 +153,6 @@ void loop() {
       Serial.print(y, 3);
       Serial.print(" ");
       Serial.println(th, 3);
-
       // --- Stampa posizione joint ---
       Serial.print("J ");
       Serial.print(pos_left_rad, 6);
