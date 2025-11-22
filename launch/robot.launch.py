@@ -24,15 +24,15 @@ def generate_launch_description():
     sllidar_launch_file = os.path.join(
         get_package_share_directory('sllidar_ros2'),
         'launch',
-        'sllidar_c1_launch.py'
+        'view_sllidar_c1_launch.py'
     )
     
 
-    # slam_params_path = os.path.join(
-    #     get_package_share_directory(package_name),
-    #     'config',
-    #     'mapper_params_online_async.yaml'
-    # )
+    slam_params_path = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'mapper_params_online_async.yaml'
+    )
 
     # twist_mux_params_path = os.path.join(
     #     get_package_share_directory(package_name),
@@ -73,7 +73,7 @@ def generate_launch_description():
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(sllidar_launch_file),
         launch_arguments={
-            'port': '/dev/sllidar',    
+            'port': '/dev/ttyUSB1',    
             'frame_id': 'spazz.ino/body_link/laser_frame'  
         }.items()
     )
@@ -106,19 +106,19 @@ def generate_launch_description():
     # )
 
 
-    # slam_toolbox_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(
-    #             get_package_share_directory('slam_toolbox'),
-    #             'launch',
-    #             'online_async_launch.py'
-    #         )
-    #     ),
-    #     launch_arguments={
-    #         'slam_params_file': slam_params_path,
-    #         'use_sim_time': 'false'
-    #     }.items()
-    # )
+    slam_toolbox_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('slam_toolbox'),
+                'launch',
+                'online_async_launch.py'
+            )
+        ),
+        launch_arguments={
+            'slam_params_file': slam_params_path,
+            'use_sim_time': 'false'
+        }.items()
+    )
 
 
     # twist_mux_process = Node(
@@ -152,8 +152,8 @@ def generate_launch_description():
         robot_state_publisher_node,
         lidar_launch,
         arduino_bridge_node,
-        static_tf_pub_node
-        # slam_toolbox_launch,
+        static_tf_pub_node,
+        slam_toolbox_launch
         # twist_mux_process,
         # nav2_launch
     ])
