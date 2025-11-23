@@ -26,6 +26,12 @@ def generate_launch_description():
         'launch',
         'view_sllidar_c1_launch.py'
     )
+
+    joy_params_path = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'joystick.yaml'
+    )
     
 
     slam_params_path = os.path.join(
@@ -34,11 +40,11 @@ def generate_launch_description():
         'mapper_params_online_async.yaml'
     )
 
-    # twist_mux_params_path = os.path.join(
-    #     get_package_share_directory(package_name),
-    #     'config',
-    #     'twist_mux.yaml'
-    # )
+    twist_mux_params_path = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'twist_mux.yaml'
+    )
 
     # nav2_params_path = os.path.join(
     #     get_package_share_directory(package_name),
@@ -85,6 +91,20 @@ def generate_launch_description():
             output="screen"
     )
 
+    joy_node = Node(
+            package='joy',
+            executable='joy_node',
+            parameters=[joy_params_path],
+        )
+    
+    teleop_node = Node(
+            package='teleop_twist_joy',
+            executable='teleop_node',
+            name='teleop_twist_joy_node',
+            parameters=[joy_params_path],
+            remappings=[('/cmd_vel', '/cmd_vel_joy')]
+        )
+
     # rviz_node = Node(
     #         package='rviz2',
     #         executable='rviz2',
@@ -121,14 +141,14 @@ def generate_launch_description():
     )
 
 
-    # twist_mux_process = Node(
-    #     package="twist_mux",
-    #     executable="twist_mux",
-    #     name="twist_mux",
-    #     output="screen",
-    #     parameters=[twist_mux_params_path],
-    #     remappings=[('/cmd_vel_out', '/cmd_vel')]
-    # )
+    twist_mux_process = Node(
+        package="twist_mux",
+        executable="twist_mux",
+        name="twist_mux",
+        output="screen",
+        parameters=[twist_mux_params_path],
+        remappings=[('/cmd_vel_out', '/cmd_vel')]
+    )
 
     # nav2_launch = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(
@@ -153,7 +173,9 @@ def generate_launch_description():
         lidar_launch,
         arduino_bridge_node,
         static_tf_pub_node,
-        slam_toolbox_launch
-        # twist_mux_process,
+        joy_node,
+        teleop_node,
+        slam_toolbox_launch,
+        twist_mux_process
         # nav2_launch
     ])
